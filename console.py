@@ -2,6 +2,7 @@
 """ Console Module """
 import cmd
 import sys
+import models
 from models import storage
 from datetime import datetime
 from models.base_model import BaseModel
@@ -13,6 +14,7 @@ from models.city import City
 from models.amenity import Amenity
 from models.review import Review
 import shlex
+import re
 
 classes = {'BaseModel': BaseModel, 'User': User, 'State': State, 'City': City, 'Amenity': Amenity, 'Place': Place, 'Review': Review}
 
@@ -21,23 +23,11 @@ class HBNBCommand(cmd.Cmd):
     """ Contains the functionality for the HBNB console"""
 
     # determines prompt for interactive/non-interactive modes
-    prompt = '(hbnb) ' if sys.__stdin__.isatty() else ''
-
-    all_classes = {
-               'BaseModel', 'User', 'Place',
-               'State', 'City', 'Amenity',
-               'Review'
-              }
-    dot_cmds = ['all', 'count', 'show', 'destroy', 'update']
-    types = {
-             'number_rooms': int, 'number_bathrooms': int,
-             'max_guest': int, 'price_by_night': int,
-             'latitude': float, 'longitude': float
-            }
-
+    prompt = '(hbnb) '
+    
     def do_quit(self, command):
         """ Method to exit the HBNB console"""
-        exit()
+        return True
 
     def help_quit(self):
         """ Prints the help documentation for quit  """
@@ -45,8 +35,7 @@ class HBNBCommand(cmd.Cmd):
 
     def do_EOF(self, arg):
         """ Handles EOF to exit program """
-        print()
-        exit()
+        return True
 
     def help_EOF(self):
         """ Prints the help documentation for EOF """
@@ -54,35 +43,31 @@ class HBNBCommand(cmd.Cmd):
 
     def emptyline(self):
         """ Overrides the emptyline method of CMD """
-        pass
+        return False
 
     def do_create(self, args):
         """ Create an object of any class"""
-        if args is None or len(args) == 0:
-            print("** class name missing **")
+        args = shlex.split(arg)
+        if len(args) == 0:
+            print("** class name misssing **")
+            return False
+        if args[0] not in classes:
+            print("** class doesn't exist **")
+            return False
         else:
-            a = shlex.split(args)
-            if a[0] in classes and len(a) == 1:
-                new = eval(str(args) + "()")
-                new.save()
-                print(new.id)
-            elif a[0] in classes and len(a) > 1:
-                new = eval(str(a[0]) + "()")
-                params = dict(arg.split('=') for arg in a[1:])
-                for key, val in params.items():
-                    if '_' in val:
-                        val = val.replace('_', ' ')
-                    if hasattr(new, key):
-                        setattr(new, key, val)
-                new.save()
-                print(new.id)
-            else:
-                print("** class doesnt exist **")
-                
-    def help_create(self):
-        """ Help information for the create method """
-        print("Creates a class of any type")
-        print("[Usage]: create <className>\n")
+            kwargs = {}
+            for arg in arg[1:]:
+                match = re.fullmatch('(?P<key>[a-zA-Z_]\w*)=(?:'
+                                     '(?P<int>\d+)|'
+                                     '(?P<float>\d*\.\d*)|'
+                                     '(?P<string>.*))',
+                                     arg)
+                match = match.groupdict()
+                if match['string']:
+                    kwargs[match['key']] =match['string'].replace('_', ' ')
+                else:
+                    kwargs[match['key']] = int(match['in
+                                                                  
 
     def do_show(self, line):
         """ Method to show an individual object """
